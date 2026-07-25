@@ -11,7 +11,6 @@
 
     <title>TSUNAGU - Scanner QR</title>
 
-    <!-- Biblioteca responsável pela leitura do QR Code -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <style>
@@ -62,7 +61,7 @@
             width: 100%;
             overflow: hidden;
             border-radius: 14px;
-            background: #000000;
+            background: #000;
         }
 
         #status {
@@ -110,264 +109,338 @@
             cursor: pointer;
         }
 
+        button:disabled {
+            opacity: .55;
+            cursor: default;
+        }
+
     </style>
 </head>
 
 <body>
 
-    <main class="container">
+<main class="container">
 
-        <header class="header">
+    <header class="header">
 
-            <h1>TSUNAGU</h1>
+        <h1>TSUNAGU</h1>
 
-            <p>Leitor de QR Code</p>
+        <p>Leitor de QR Code</p>
 
-        </header>
-
-
-        <section class="scanner-card">
-
-            <div id="reader"></div>
-
-            <div id="status">
-                Clique em "INICIAR LEITURA".
-            </div>
+    </header>
 
 
-            <div id="result">
+    <section class="scanner-card">
 
-                <span class="label">
-                    Conteúdo identificado
-                </span>
-
-                <span id="qrValue"></span>
-
-            </div>
+        <div id="reader"></div>
 
 
-            <button id="startButton">
-                INICIAR LEITURA
-            </button>
-
-        </section>
-
-    </main>
+        <div id="status">
+            Clique em "INICIAR LEITURA".
+        </div>
 
 
-    <script>
+        <div id="result">
 
-        /******************************************************************
-         * TSUNAGU
-         * Teste isolado do leitor de QR Code
-         ******************************************************************/
+            <span class="label">
+                Conteúdo identificado
+            </span>
 
-        const statusElement =
-            document.getElementById("status");
+            <span id="qrValue"></span>
 
-        const resultElement =
-            document.getElementById("result");
-
-        const qrValueElement =
-            document.getElementById("qrValue");
-
-        const startButton =
-            document.getElementById("startButton");
+        </div>
 
 
-        let scanner = null;
+        <button id="startButton">
+            INICIAR LEITURA
+        </button>
 
-        let scannerRunning = false;
+    </section>
 
-        let qrProcessed = false;
-
-
-        startButton.addEventListener(
-            "click",
-            startScanner
-        );
+</main>
 
 
-        // ==============================================================
-        // INICIA A CÂMERA E O LEITOR
-        // ==============================================================
+<script>
 
-        async function startScanner() {
-
-            if (scannerRunning) {
-                return;
-            }
-
-            try {
-
-                qrProcessed = false;
-
-                resultElement.style.display = "none";
-
-                statusElement.textContent =
-                    "Abrindo câmera...";
-
-                startButton.disabled = true;
+    /******************************************************************
+     *
+     * TSUNAGU
+     * Teste isolado do scanner QR Code
+     *
+     ******************************************************************/
 
 
-                if (!scanner) {
+    const statusElement =
+        document.getElementById("status");
 
-                    scanner =
-                        new Html5Qrcode("reader");
+    const resultElement =
+        document.getElementById("result");
+
+    const qrValueElement =
+        document.getElementById("qrValue");
+
+    const startButton =
+        document.getElementById("startButton");
+
+
+    let scanner = null;
+
+    let scannerRunning = false;
+
+    let startingScanner = false;
+
+    let qrProcessed = false;
+
+
+    startButton.addEventListener(
+        "click",
+        startScanner
+    );
+
+
+    // ================================================================
+    // INICIA O SCANNER
+    // ================================================================
+
+    async function startScanner() {
+
+        if (
+            scannerRunning ||
+            startingScanner
+        ) {
+            return;
+        }
+
+
+        startingScanner = true;
+
+        startButton.disabled = true;
+
+        qrProcessed = false;
+
+        resultElement.style.display = "none";
+
+        statusElement.textContent =
+            "Abrindo câmera...";
+
+
+        try {
+
+            /*
+             * Sempre criamos uma instância limpa.
+             * Isso evita estados internos quebrados após erros.
+             */
+
+            scanner =
+                new Html5Qrcode("reader");
+
+
+            await scanner.start(
+
+                /*
+                 * IMPORTANTE:
+                 *
+                 * html5-qrcode espera "environment"
+                 * diretamente neste campo.
+                 */
+
+                {
+                    facingMode: "environment"
+                },
+
+
+                {
+                    fps: 10,
+
+                    qrbox: function(
+                        viewfinderWidth,
+                        viewfinderHeight
+                    ) {
+
+                        const size =
+                            Math.floor(
+
+                                Math.min(
+                                    viewfinderWidth,
+                                    viewfinderHeight
+                                ) * 0.70
+
+                            );
+
+
+                        return {
+
+                            width: size,
+
+                            height: size
+
+                        };
+
+                    }
+                },
+
+
+                onScanSuccess,
+
+
+                function () {
+
+                    /*
+                     * Enquanto não existe QR Code no quadro,
+                     * a biblioteca gera tentativas sem sucesso.
+                     *
+                     * Isso é comportamento normal.
+                     */
 
                 }
 
-
-                await scanner.start(
-
-                    {
-                        facingMode: {
-                            ideal: "environment"
-                        }
-                    },
-
-                    {
-                        fps: 10,
-
-                        qrbox: function(
-                            viewfinderWidth,
-                            viewfinderHeight
-                        ) {
-
-                            const size =
-                                Math.floor(
-                                    Math.min(
-                                        viewfinderWidth,
-                                        viewfinderHeight
-                                    ) * 0.70
-                                );
-
-                            return {
-                                width: size,
-                                height: size
-                            };
-
-                        }
-                    },
-
-                    qrCodeSuccess,
-
-                    function() {
-                        // Falhas enquanto procura um QR são normais.
-                    }
-
-                );
+            );
 
 
-                scannerRunning = true;
-
-                statusElement.textContent =
-                    "Aponte a câmera para o QR Code.";
-
-            }
-
-            catch (error) {
-
-                console.error(error);
-
-                scannerRunning = false;
-
-                startButton.disabled = false;
-
-                statusElement.textContent =
-                    "ERRO: " +
-                    (error.name || "Erro") +
-                    " — " +
-                    (error.message || String(error));
-
-            }
-
-        }
-
-
-        // ==============================================================
-        // QR CODE ENCONTRADO
-        // ==============================================================
-
-        async function qrCodeSuccess(
-            decodedText
-        ) {
-
-            if (qrProcessed) {
-                return;
-            }
-
-
-            qrProcessed = true;
-
-
-            const value =
-                String(decodedText || "").trim();
-
-
-            await stopScanner();
-
-
-            qrValueElement.textContent =
-                value;
-
-
-            resultElement.style.display =
-                "block";
+            scannerRunning = true;
 
 
             statusElement.textContent =
-                "QR Code lido com sucesso.";
+                "Aponte a câmera para o QR Code.";
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "TSUNAGU Scanner:",
+                error
+            );
 
 
-            startButton.textContent =
-                "LER OUTRO QR CODE";
+            scannerRunning = false;
 
 
-            startButton.disabled =
-                false;
+            /*
+             * Descarta completamente a instância
+             * que apresentou erro.
+             */
+
+            scanner = null;
+
+
+            statusElement.textContent =
+                "ERRO: " +
+                (error.name || "Erro") +
+                " — " +
+                (error.message || String(error));
+
+
+            startButton.disabled = false;
+
+        }
+
+        finally {
+
+            startingScanner = false;
+
+        }
+
+    }
+
+
+
+    // ================================================================
+    // QR CODE IDENTIFICADO
+    // ================================================================
+
+    async function onScanSuccess(
+        decodedText
+    ) {
+
+        if (qrProcessed) {
+            return;
+        }
+
+
+        qrProcessed = true;
+
+
+        const value =
+            String(decodedText || "").trim();
+
+
+        statusElement.textContent =
+            "QR Code identificado...";
+
+
+        await stopScanner();
+
+
+        qrValueElement.textContent =
+            value;
+
+
+        resultElement.style.display =
+            "block";
+
+
+        statusElement.textContent =
+            "QR Code lido com sucesso.";
+
+
+        startButton.textContent =
+            "LER OUTRO QR CODE";
+
+
+        startButton.disabled =
+            false;
+
+    }
+
+
+
+    // ================================================================
+    // PARA O SCANNER
+    // ================================================================
+
+    async function stopScanner() {
+
+        if (
+            !scanner ||
+            !scannerRunning
+        ) {
+
+            scanner = null;
+
+            scannerRunning = false;
+
+            return;
 
         }
 
 
-        // ==============================================================
-        // PARA A CÂMERA
-        // ==============================================================
+        try {
 
-        async function stopScanner() {
-
-            if (
-                !scanner ||
-                !scannerRunning
-            ) {
-                return;
-            }
-
-
-            try {
-
-                await scanner.stop();
-
-            }
-
-            catch (error) {
-
-                console.warn(
-                    "Erro ao parar câmera:",
-                    error
-                );
-
-            }
-
-            finally {
-
-                scannerRunning = false;
-
-            }
+            await scanner.stop();
 
         }
 
-    </script>
+        catch (error) {
+
+            console.warn(
+                "TSUNAGU - parada da câmera:",
+                error
+            );
+
+        }
+
+        finally {
+
+            scannerRunning = false;
+
+            scanner = null;
+
+        }
+
+    }
+
+</script>
 
 </body>
 
