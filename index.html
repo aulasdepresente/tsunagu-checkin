@@ -23,7 +23,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            padding: 24px 18px;
+            padding: 24px 18px 50px;
             background: #0F172A;
             color: #FFFFFF;
             font-family: Arial, Helvetica, sans-serif;
@@ -34,6 +34,10 @@
             max-width: 600px;
             margin: 0 auto;
         }
+
+        /* ============================================================
+           CABEÇALHO
+           ============================================================ */
 
         .header {
             text-align: center;
@@ -51,12 +55,36 @@
             color: #CBD5E1;
         }
 
-        .scanner-card {
+        /* ============================================================
+           CARDS
+           ============================================================ */
+
+        .card {
             padding: 16px;
             background: #1E293B;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,.30);
         }
+
+        .manual-card {
+            margin-top: 22px;
+        }
+
+        .section-title {
+            margin: 0 0 6px;
+            font-size: 19px;
+        }
+
+        .section-description {
+            margin: 0 0 16px;
+            color: #94A3B8;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* ============================================================
+           SCANNER
+           ============================================================ */
 
         #reader {
             width: 100%;
@@ -73,7 +101,7 @@
             font-size: 17px;
             font-weight: bold;
             line-height: 1.4;
-            background: #2563EB;
+            white-space: pre-line;
         }
 
         #participant {
@@ -85,20 +113,24 @@
         }
 
         .info {
-            background: #2563EB !important;
+            background: #2563EB;
         }
 
         .success {
-            background: #16A34A !important;
+            background: #16A34A;
         }
 
         .warning {
-            background: #D97706 !important;
+            background: #D97706;
         }
 
         .error {
-            background: #DC2626 !important;
+            background: #DC2626;
         }
+
+        /* ============================================================
+           ESTATÍSTICAS
+           ============================================================ */
 
         .stats {
             display: grid;
@@ -128,19 +160,149 @@
             font-size: 14px;
         }
 
+        /* ============================================================
+           BOTÕES
+           ============================================================ */
+
         button {
-            width: 100%;
-            margin-top: 20px;
-            padding: 17px;
             border: 0;
             border-radius: 12px;
-            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
         }
 
         button:disabled {
-            opacity: .55;
+            opacity: .50;
+            cursor: default;
+        }
+
+        #startButton {
+            width: 100%;
+            margin-top: 20px;
+            padding: 17px;
+            font-size: 17px;
+        }
+
+        /* ============================================================
+           BUSCA MANUAL
+           ============================================================ */
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        #searchInput {
+            flex: 1;
+            min-width: 0;
+            padding: 15px;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            background: #0F172A;
+            color: #FFFFFF;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #searchInput:focus {
+            border-color: #38BDF8;
+        }
+
+        #searchInput::placeholder {
+            color: #64748B;
+        }
+
+        #searchButton {
+            padding: 0 18px;
+            background: #38BDF8;
+            color: #082F49;
+            font-size: 15px;
+        }
+
+        #searchMessage {
+            display: none;
+            margin-top: 15px;
+            padding: 13px;
+            border-radius: 10px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        #searchResults {
+            margin-top: 15px;
+        }
+
+        /* ============================================================
+           PARTICIPANTE DA BUSCA
+           ============================================================ */
+
+        .participant-card {
+            margin-top: 12px;
+            padding: 16px;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            background: #0F172A;
+        }
+
+        .participant-name {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .participant-status {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-pendente {
+            background: rgba(56,189,248,.15);
+            color: #7DD3FC;
+        }
+
+        .status-checkin {
+            background: rgba(34,197,94,.15);
+            color: #86EFAC;
+        }
+
+        .participant-date {
+            margin-top: 10px;
+            color: #94A3B8;
+            font-size: 13px;
+        }
+
+        .manual-checkin-button {
+            width: 100%;
+            margin-top: 14px;
+            padding: 13px;
+            background: #22C55E;
+            color: #052E16;
+            font-size: 14px;
+        }
+
+        /* ============================================================
+           RESPONSIVIDADE
+           ============================================================ */
+
+        @media (max-width: 420px) {
+
+            body {
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            #searchButton {
+                padding: 14px;
+            }
+
         }
 
     </style>
@@ -152,6 +314,10 @@
 
 <main class="container">
 
+    <!-- ============================================================
+         CABEÇALHO
+         ============================================================ -->
+
     <header class="header">
 
         <h1>TSUNAGU</h1>
@@ -161,10 +327,13 @@
     </header>
 
 
-    <section class="scanner-card">
+    <!-- ============================================================
+         SCANNER QR
+         ============================================================ -->
+
+    <section class="card">
 
         <div id="reader"></div>
-
 
         <div
             id="status"
@@ -173,9 +342,7 @@
             Clique em INICIAR CHECK-IN.
         </div>
 
-
         <div id="participant"></div>
-
 
         <button id="startButton">
             INICIAR CHECK-IN
@@ -183,6 +350,10 @@
 
     </section>
 
+
+    <!-- ============================================================
+         ESTATÍSTICAS
+         ============================================================ -->
 
     <section class="stats">
 
@@ -219,6 +390,45 @@
 
     </section>
 
+
+    <!-- ============================================================
+         CHECK-IN MANUAL
+         ============================================================ -->
+
+    <section class="card manual-card">
+
+        <h2 class="section-title">
+            Busca manual
+        </h2>
+
+        <p class="section-description">
+            Localize o participante pelo nome caso não seja possível
+            utilizar o QR Code.
+        </p>
+
+
+        <div class="search-box">
+
+            <input
+                id="searchInput"
+                type="search"
+                placeholder="Digite o nome do participante"
+                autocomplete="off"
+            >
+
+            <button id="searchButton">
+                BUSCAR
+            </button>
+
+        </div>
+
+
+        <div id="searchMessage"></div>
+
+        <div id="searchResults"></div>
+
+    </section>
+
 </main>
 
 
@@ -228,6 +438,8 @@
  *
  * TSUNAGU
  * Interface MVP
+ *
+ * Scanner QR + Check-in + Estatísticas + Busca Manual
  *
  ***********************************************************************/
 
@@ -241,7 +453,7 @@ const API_URL =
 
 
 // =====================================================================
-// ELEMENTOS
+// ELEMENTOS DO SCANNER
 // =====================================================================
 
 const statusElement =
@@ -261,7 +473,24 @@ const remainingElement =
 
 
 // =====================================================================
-// ESTADO
+// ELEMENTOS DA BUSCA MANUAL
+// =====================================================================
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const searchButton =
+    document.getElementById("searchButton");
+
+const searchMessage =
+    document.getElementById("searchMessage");
+
+const searchResults =
+    document.getElementById("searchResults");
+
+
+// =====================================================================
+// ESTADO DO SCANNER
 // =====================================================================
 
 let scanner = null;
@@ -283,6 +512,28 @@ startButton.addEventListener(
 );
 
 
+searchButton.addEventListener(
+    "click",
+    searchParticipants
+);
+
+
+searchInput.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            searchParticipants();
+
+        }
+
+    }
+);
+
+
 // =====================================================================
 // INICIALIZAÇÃO
 // =====================================================================
@@ -291,7 +542,7 @@ loadStatistics();
 
 
 // =====================================================================
-// SCANNER
+// INICIA SCANNER
 // =====================================================================
 
 async function startScanner() {
@@ -309,7 +560,9 @@ async function startScanner() {
 
     startButton.disabled = true;
 
-    participantElement.style.display = "none";
+    participantElement.style.display =
+        "none";
+
 
     setStatus(
         "Abrindo câmera...",
@@ -396,7 +649,7 @@ async function startScanner() {
 
 
 // =====================================================================
-// QR IDENTIFICADO
+// QR CODE IDENTIFICADO
 // =====================================================================
 
 async function onScanSuccess(decodedText) {
@@ -422,16 +675,22 @@ async function onScanSuccess(decodedText) {
     );
 
 
-    await validateCheckin(uuid);
+    await validateCheckin(
+        uuid,
+        "scanner"
+    );
 
 }
 
 
 // =====================================================================
-// COMUNICAÇÃO COM API
+// VALIDA CHECK-IN
 // =====================================================================
 
-async function validateCheckin(uuid) {
+async function validateCheckin(
+    uuid,
+    source = "scanner"
+) {
 
     try {
 
@@ -458,7 +717,17 @@ async function validateCheckin(uuid) {
             await response.json();
 
 
-        handleResult(result);
+        if (source === "manual") {
+
+            handleManualCheckinResult(result);
+
+        }
+
+        else {
+
+            handleScannerResult(result);
+
+        }
 
     }
 
@@ -467,13 +736,27 @@ async function validateCheckin(uuid) {
         console.error(error);
 
 
-        setStatus(
-            "Erro de comunicação com o servidor.",
-            "error"
-        );
+        if (source === "manual") {
 
+            showSearchMessage(
+                "Erro de comunicação com o servidor.",
+                "error"
+            );
 
-        scheduleNextScan();
+            searchButton.disabled = false;
+
+        }
+
+        else {
+
+            setStatus(
+                "Erro de comunicação com o servidor.",
+                "error"
+            );
+
+            scheduleNextScan();
+
+        }
 
     }
 
@@ -481,10 +764,10 @@ async function validateCheckin(uuid) {
 
 
 // =====================================================================
-// RESULTADO
+// RESULTADO DO SCANNER
 // =====================================================================
 
-function handleResult(result) {
+function handleScannerResult(result) {
 
     if (result.status === "SUCCESS") {
 
@@ -616,7 +899,7 @@ async function loadStatistics() {
 
 
 // =====================================================================
-// PRÓXIMA LEITURA
+// PRÓXIMA LEITURA DO SCANNER
 // =====================================================================
 
 function scheduleNextScan() {
@@ -642,7 +925,7 @@ function scheduleNextScan() {
 
 
 // =====================================================================
-// PARA SCANNER
+// PARA O SCANNER
 // =====================================================================
 
 async function stopScanner() {
@@ -685,7 +968,7 @@ async function stopScanner() {
 
 
 // =====================================================================
-// STATUS VISUAL
+// STATUS VISUAL DO SCANNER
 // =====================================================================
 
 function setStatus(
@@ -696,9 +979,419 @@ function setStatus(
     statusElement.className =
         type;
 
-
     statusElement.textContent =
         message;
+
+}
+
+
+// =====================================================================
+// BUSCA MANUAL
+// =====================================================================
+
+async function searchParticipants() {
+
+    const term =
+        searchInput.value.trim();
+
+
+    searchResults.innerHTML = "";
+
+
+    if (term.length < 2) {
+
+        showSearchMessage(
+            "Digite pelo menos 2 caracteres.",
+            "warning"
+        );
+
+        return;
+
+    }
+
+
+    searchButton.disabled = true;
+
+
+    showSearchMessage(
+        "Buscando participante...",
+        "info"
+    );
+
+
+    try {
+
+        const url =
+            API_URL +
+            "?action=search&term=" +
+            encodeURIComponent(term);
+
+
+        const response =
+            await fetch(url);
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " + response.status
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        if (!result.success) {
+
+            throw new Error(
+                result.message ||
+                "Erro na busca."
+            );
+
+        }
+
+
+        renderParticipants(
+            result.participants || []
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+
+        showSearchMessage(
+            "Não foi possível realizar a busca.",
+            "error"
+        );
+
+    }
+
+    finally {
+
+        searchButton.disabled = false;
+
+    }
+
+}
+
+
+// =====================================================================
+// EXIBE RESULTADOS DA BUSCA
+// =====================================================================
+
+function renderParticipants(participants) {
+
+    searchResults.innerHTML = "";
+
+
+    if (!participants.length) {
+
+        showSearchMessage(
+            "Nenhum participante encontrado.",
+            "warning"
+        );
+
+        return;
+
+    }
+
+
+    hideSearchMessage();
+
+
+    participants.forEach(
+        function(participant) {
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "participant-card";
+
+
+            const name =
+                document.createElement("p");
+
+            name.className =
+                "participant-name";
+
+            name.textContent =
+                participant.nome;
+
+
+            const status =
+                document.createElement("span");
+
+            status.className =
+                "participant-status";
+
+
+            const isCheckedIn =
+                participant.status === "CHECK-IN";
+
+
+            if (isCheckedIn) {
+
+                status.classList.add(
+                    "status-checkin"
+                );
+
+                status.textContent =
+                    "CHECK-IN REALIZADO";
+
+            }
+
+            else {
+
+                status.classList.add(
+                    "status-pendente"
+                );
+
+                status.textContent =
+                    "PENDENTE";
+
+            }
+
+
+            card.appendChild(name);
+
+            card.appendChild(status);
+
+
+            if (
+                isCheckedIn &&
+                participant.dataHora
+            ) {
+
+                const date =
+                    document.createElement("div");
+
+                date.className =
+                    "participant-date";
+
+                date.textContent =
+                    "Entrada: " +
+                    participant.dataHora;
+
+                card.appendChild(date);
+
+            }
+
+
+            if (!isCheckedIn) {
+
+                const button =
+                    document.createElement("button");
+
+                button.className =
+                    "manual-checkin-button";
+
+                button.textContent =
+                    "CONFIRMAR ENTRADA";
+
+
+                button.addEventListener(
+                    "click",
+                    function() {
+
+                        manualCheckin(
+                            participant,
+                            button
+                        );
+
+                    }
+                );
+
+
+                card.appendChild(button);
+
+            }
+
+
+            searchResults.appendChild(card);
+
+        }
+    );
+
+}
+
+
+// =====================================================================
+// CHECK-IN MANUAL
+// =====================================================================
+
+async function manualCheckin(
+    participant,
+    button
+) {
+
+    /*
+     * A recepção precisa confirmar conscientemente a entrada.
+     * Evita check-in acidental ao tocar no resultado errado.
+     */
+
+    const confirmed =
+        window.confirm(
+            "Confirmar entrada de:\n\n" +
+            participant.nome +
+            "?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "CONFIRMANDO...";
+
+
+    showSearchMessage(
+        "Registrando entrada...",
+        "info"
+    );
+
+
+    await validateCheckin(
+        participant.uuid,
+        "manual"
+    );
+
+}
+
+
+// =====================================================================
+// RESULTADO DO CHECK-IN MANUAL
+// =====================================================================
+
+function handleManualCheckinResult(result) {
+
+    searchButton.disabled = false;
+
+
+    if (result.status === "SUCCESS") {
+
+        showSearchMessage(
+            "✓ Entrada liberada para " +
+            (result.nome || "participante") +
+            ".",
+            "success"
+        );
+
+
+        loadStatistics();
+
+
+        /*
+         * Refaz a pesquisa para atualizar imediatamente
+         * PENDENTE → CHECK-IN REALIZADO.
+         */
+
+        searchParticipants();
+
+        return;
+
+    }
+
+
+    if (result.status === "USED") {
+
+        let message =
+            "Entrada já realizada";
+
+
+        if (result.nome) {
+
+            message +=
+                " para " +
+                result.nome;
+
+        }
+
+
+        if (result.dataHora) {
+
+            message +=
+                ". Entrada: " +
+                result.dataHora;
+
+        }
+
+
+        showSearchMessage(
+            message,
+            "warning"
+        );
+
+
+        loadStatistics();
+
+        searchParticipants();
+
+        return;
+
+    }
+
+
+    if (result.status === "INVALID") {
+
+        showSearchMessage(
+            "Participante inválido.",
+            "error"
+        );
+
+        searchParticipants();
+
+        return;
+
+    }
+
+
+    showSearchMessage(
+        "Não foi possível realizar o check-in.",
+        "error"
+    );
+
+}
+
+
+// =====================================================================
+// MENSAGENS DA BUSCA
+// =====================================================================
+
+function showSearchMessage(
+    message,
+    type
+) {
+
+    searchMessage.style.display =
+        "block";
+
+    searchMessage.className =
+        type;
+
+    searchMessage.textContent =
+        message;
+
+}
+
+
+function hideSearchMessage() {
+
+    searchMessage.style.display =
+        "none";
+
+    searchMessage.textContent =
+        "";
 
 }
 
