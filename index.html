@@ -4,19 +4,157 @@
 <head>
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>TSUNAGU</title>
+    <title>TSUNAGU - Teste de Câmera</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            padding: 25px;
+            background: #0F172A;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            letter-spacing: 3px;
+        }
+
+        #status {
+            margin: 25px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: #1E293B;
+        }
+
+        video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 16px;
+            background: black;
+        }
+
+        button {
+            width: 100%;
+            max-width: 500px;
+            padding: 18px;
+            margin-top: 20px;
+            border: 0;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+    </style>
 </head>
 
 <body>
 
     <h1>TSUNAGU</h1>
 
-    <p>Sistema Inteligente de Gestão de Acesso</p>
+    <p>Teste de acesso à câmera</p>
 
-    <p>Interface carregada com sucesso.</p>
+    <div id="status">
+        Clique no botão abaixo.
+    </div>
+
+    <video
+        id="camera"
+        autoplay
+        playsinline
+        muted>
+    </video>
+
+    <button id="btnCamera">
+        ABRIR CÂMERA
+    </button>
+
+
+    <script>
+
+        const statusElement =
+            document.getElementById("status");
+
+        const videoElement =
+            document.getElementById("camera");
+
+        const button =
+            document.getElementById("btnCamera");
+
+
+        button.addEventListener(
+            "click",
+            abrirCamera
+        );
+
+
+        async function abrirCamera() {
+
+            try {
+
+                statusElement.textContent =
+                    "Solicitando permissão da câmera...";
+
+
+                if (
+                    !navigator.mediaDevices ||
+                    !navigator.mediaDevices.getUserMedia
+                ) {
+
+                    throw new Error(
+                        "Este navegador não disponibilizou getUserMedia."
+                    );
+
+                }
+
+
+                const stream =
+                    await navigator.mediaDevices.getUserMedia({
+
+                        video: {
+                            facingMode: {
+                                ideal: "environment"
+                            }
+                        },
+
+                        audio: false
+
+                    });
+
+
+                videoElement.srcObject = stream;
+
+
+                statusElement.textContent =
+                    "Câmera funcionando corretamente.";
+
+
+                button.style.display = "none";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                statusElement.textContent =
+                    "ERRO: " +
+                    (error.name || "Erro") +
+                    " — " +
+                    (error.message || String(error));
+
+            }
+
+        }
+
+    </script>
 
 </body>
 
