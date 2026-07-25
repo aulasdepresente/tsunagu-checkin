@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -9,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>TSUNAGU - Scanner QR</title>
+    <title>TSUNAGU</title>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -46,7 +47,7 @@
         }
 
         .header p {
-            margin-top: 8px;
+            margin: 8px 0 0;
             color: #CBD5E1;
         }
 
@@ -54,7 +55,7 @@
             padding: 16px;
             background: #1E293B;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .30);
+            box-shadow: 0 10px 30px rgba(0,0,0,.30);
         }
 
         #reader {
@@ -65,37 +66,66 @@
         }
 
         #status {
-            margin-top: 20px;
-            padding: 17px;
+            margin-top: 18px;
+            padding: 18px;
             border-radius: 12px;
             text-align: center;
+            font-size: 17px;
             font-weight: bold;
             line-height: 1.4;
             background: #2563EB;
         }
 
-        #result {
+        #participant {
             display: none;
-            margin-top: 18px;
-            padding: 18px;
-            border-radius: 12px;
-            background: #0F172A;
-            border: 1px solid #334155;
-        }
-
-        #result .label {
-            display: block;
-            margin-bottom: 8px;
-            color: #94A3B8;
-            font-size: 13px;
-            text-transform: uppercase;
-        }
-
-        #qrValue {
-            display: block;
-            overflow-wrap: anywhere;
-            font-size: 18px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 20px;
             font-weight: bold;
+        }
+
+        .info {
+            background: #2563EB !important;
+        }
+
+        .success {
+            background: #16A34A !important;
+        }
+
+        .warning {
+            background: #D97706 !important;
+        }
+
+        .error {
+            background: #DC2626 !important;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .stat {
+            padding: 20px 10px;
+            background: #1E293B;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 32px;
+            font-weight: bold;
+            color: #38BDF8;
+        }
+
+        .stat-label {
+            display: block;
+            margin-top: 6px;
+            color: #CBD5E1;
+            font-size: 14px;
         }
 
         button {
@@ -111,11 +141,12 @@
 
         button:disabled {
             opacity: .55;
-            cursor: default;
         }
 
     </style>
+
 </head>
+
 
 <body>
 
@@ -125,7 +156,7 @@
 
         <h1>TSUNAGU</h1>
 
-        <p>Leitor de QR Code</p>
+        <p>Sistema Inteligente de Gestão de Acesso</p>
 
     </header>
 
@@ -135,25 +166,56 @@
         <div id="reader"></div>
 
 
-        <div id="status">
-            Clique em "INICIAR LEITURA".
+        <div
+            id="status"
+            class="info"
+        >
+            Clique em INICIAR CHECK-IN.
         </div>
 
 
-        <div id="result">
-
-            <span class="label">
-                Conteúdo identificado
-            </span>
-
-            <span id="qrValue"></span>
-
-        </div>
+        <div id="participant"></div>
 
 
         <button id="startButton">
-            INICIAR LEITURA
+            INICIAR CHECK-IN
         </button>
+
+    </section>
+
+
+    <section class="stats">
+
+        <div class="stat">
+
+            <span
+                id="checked"
+                class="stat-number"
+            >
+                -
+            </span>
+
+            <span class="stat-label">
+                Check-ins
+            </span>
+
+        </div>
+
+
+        <div class="stat">
+
+            <span
+                id="remaining"
+                class="stat-number"
+            >
+                -
+            </span>
+
+            <span class="stat-label">
+                Restantes
+            </span>
+
+        </div>
 
     </section>
 
@@ -162,283 +224,483 @@
 
 <script>
 
-    /******************************************************************
-     *
-     * TSUNAGU
-     * Teste isolado do scanner QR Code
-     *
-     ******************************************************************/
+/***********************************************************************
+ *
+ * TSUNAGU
+ * Interface MVP
+ *
+ ***********************************************************************/
 
 
-    const statusElement =
-        document.getElementById("status");
+// =====================================================================
+// CONFIGURAÇÃO
+// =====================================================================
 
-    const resultElement =
-        document.getElementById("result");
-
-    const qrValueElement =
-        document.getElementById("qrValue");
-
-    const startButton =
-        document.getElementById("startButton");
+const API_URL =
+    "https://script.google.com/macros/s/AKfycbx4JU4qIUQMvT4B3eKCnZ8gd-I5VNoV2bZ1SLAAdc2rD8YyXD6_mYckYE56TauVFzbP/exec";
 
 
-    let scanner = null;
+// =====================================================================
+// ELEMENTOS
+// =====================================================================
 
-    let scannerRunning = false;
+const statusElement =
+    document.getElementById("status");
 
-    let startingScanner = false;
+const participantElement =
+    document.getElementById("participant");
 
-    let qrProcessed = false;
+const startButton =
+    document.getElementById("startButton");
+
+const checkedElement =
+    document.getElementById("checked");
+
+const remainingElement =
+    document.getElementById("remaining");
 
 
-    startButton.addEventListener(
-        "click",
-        startScanner
+// =====================================================================
+// ESTADO
+// =====================================================================
+
+let scanner = null;
+
+let scannerRunning = false;
+
+let startingScanner = false;
+
+let processing = false;
+
+
+// =====================================================================
+// EVENTOS
+// =====================================================================
+
+startButton.addEventListener(
+    "click",
+    startScanner
+);
+
+
+// =====================================================================
+// INICIALIZAÇÃO
+// =====================================================================
+
+loadStatistics();
+
+
+// =====================================================================
+// SCANNER
+// =====================================================================
+
+async function startScanner() {
+
+    if (
+        scannerRunning ||
+        startingScanner ||
+        processing
+    ) {
+        return;
+    }
+
+
+    startingScanner = true;
+
+    startButton.disabled = true;
+
+    participantElement.style.display = "none";
+
+    setStatus(
+        "Abrindo câmera...",
+        "info"
     );
 
 
-    // ================================================================
-    // INICIA O SCANNER
-    // ================================================================
+    try {
 
-    async function startScanner() {
-
-        if (
-            scannerRunning ||
-            startingScanner
-        ) {
-            return;
-        }
+        scanner =
+            new Html5Qrcode("reader");
 
 
-        startingScanner = true;
+        await scanner.start(
 
-        startButton.disabled = true;
+            {
+                facingMode: "environment"
+            },
 
-        qrProcessed = false;
+            {
+                fps: 10,
 
-        resultElement.style.display = "none";
+                qrbox: function(width, height) {
 
-        statusElement.textContent =
-            "Abrindo câmera...";
+                    const size =
+                        Math.floor(
+                            Math.min(
+                                width,
+                                height
+                            ) * 0.70
+                        );
 
-
-        try {
-
-            /*
-             * Sempre criamos uma instância limpa.
-             * Isso evita estados internos quebrados após erros.
-             */
-
-            scanner =
-                new Html5Qrcode("reader");
-
-
-            await scanner.start(
-
-                /*
-                 * IMPORTANTE:
-                 *
-                 * html5-qrcode espera "environment"
-                 * diretamente neste campo.
-                 */
-
-                {
-                    facingMode: "environment"
-                },
-
-
-                {
-                    fps: 10,
-
-                    qrbox: function(
-                        viewfinderWidth,
-                        viewfinderHeight
-                    ) {
-
-                        const size =
-                            Math.floor(
-
-                                Math.min(
-                                    viewfinderWidth,
-                                    viewfinderHeight
-                                ) * 0.70
-
-                            );
-
-
-                        return {
-
-                            width: size,
-
-                            height: size
-
-                        };
-
-                    }
-                },
-
-
-                onScanSuccess,
-
-
-                function () {
-
-                    /*
-                     * Enquanto não existe QR Code no quadro,
-                     * a biblioteca gera tentativas sem sucesso.
-                     *
-                     * Isso é comportamento normal.
-                     */
+                    return {
+                        width: size,
+                        height: size
+                    };
 
                 }
 
+            },
+
+            onScanSuccess,
+
+            function() {}
+
+        );
+
+
+        scannerRunning = true;
+
+
+        setStatus(
+            "Aponte a câmera para o QR Code.",
+            "info"
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        scanner = null;
+
+        scannerRunning = false;
+
+        startButton.disabled = false;
+
+
+        setStatus(
+            "Não foi possível iniciar a câmera.",
+            "error"
+        );
+
+    }
+
+    finally {
+
+        startingScanner = false;
+
+    }
+
+}
+
+
+// =====================================================================
+// QR IDENTIFICADO
+// =====================================================================
+
+async function onScanSuccess(decodedText) {
+
+    if (processing) {
+        return;
+    }
+
+
+    processing = true;
+
+
+    const uuid =
+        String(decodedText || "").trim();
+
+
+    await stopScanner();
+
+
+    setStatus(
+        "Validando acesso...",
+        "info"
+    );
+
+
+    await validateCheckin(uuid);
+
+}
+
+
+// =====================================================================
+// COMUNICAÇÃO COM API
+// =====================================================================
+
+async function validateCheckin(uuid) {
+
+    try {
+
+        const url =
+            API_URL +
+            "?action=checkin&uuid=" +
+            encodeURIComponent(uuid);
+
+
+        const response =
+            await fetch(url);
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " + response.status
             );
-
-
-            scannerRunning = true;
-
-
-            statusElement.textContent =
-                "Aponte a câmera para o QR Code.";
 
         }
 
-        catch (error) {
 
-            console.error(
-                "TSUNAGU Scanner:",
-                error
-            );
+        const result =
+            await response.json();
 
 
-            scannerRunning = false;
+        handleResult(result);
+
+    }
+
+    catch(error) {
+
+        console.error(error);
 
 
-            /*
-             * Descarta completamente a instância
-             * que apresentou erro.
-             */
-
-            scanner = null;
+        setStatus(
+            "Erro de comunicação com o servidor.",
+            "error"
+        );
 
 
-            statusElement.textContent =
-                "ERRO: " +
-                (error.name || "Erro") +
-                " — " +
-                (error.message || String(error));
+        scheduleNextScan();
+
+    }
+
+}
 
 
-            startButton.disabled = false;
+// =====================================================================
+// RESULTADO
+// =====================================================================
+
+function handleResult(result) {
+
+    if (result.status === "SUCCESS") {
+
+        participantElement.textContent =
+            result.nome || "";
+
+        participantElement.style.display =
+            result.nome
+                ? "block"
+                : "none";
+
+
+        setStatus(
+            "✓ ENTRADA LIBERADA",
+            "success"
+        );
+
+    }
+
+
+    else if (result.status === "USED") {
+
+        let message =
+            "QR CODE JÁ UTILIZADO";
+
+
+        if (result.dataHora) {
+
+            message +=
+                "\nEntrada: " +
+                result.dataHora;
 
         }
 
-        finally {
 
-            startingScanner = false;
+        participantElement.textContent =
+            result.nome || "";
+
+        participantElement.style.display =
+            result.nome
+                ? "block"
+                : "none";
+
+
+        setStatus(
+            message,
+            "warning"
+        );
+
+    }
+
+
+    else if (result.status === "INVALID") {
+
+        participantElement.style.display =
+            "none";
+
+
+        setStatus(
+            "QR CODE INVÁLIDO",
+            "error"
+        );
+
+    }
+
+
+    else {
+
+        participantElement.style.display =
+            "none";
+
+
+        setStatus(
+            "Erro interno do sistema.",
+            "error"
+        );
+
+    }
+
+
+    loadStatistics();
+
+    scheduleNextScan();
+
+}
+
+
+// =====================================================================
+// ESTATÍSTICAS
+// =====================================================================
+
+async function loadStatistics() {
+
+    try {
+
+        const response =
+            await fetch(
+                API_URL +
+                "?action=stats"
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (result.success) {
+
+            checkedElement.textContent =
+                result.checked;
+
+            remainingElement.textContent =
+                result.remaining;
 
         }
 
     }
 
+    catch(error) {
+
+        console.error(
+            "Erro ao carregar estatísticas:",
+            error
+        );
+
+    }
+
+}
 
 
-    // ================================================================
-    // QR CODE IDENTIFICADO
-    // ================================================================
+// =====================================================================
+// PRÓXIMA LEITURA
+// =====================================================================
 
-    async function onScanSuccess(
-        decodedText
+function scheduleNextScan() {
+
+    setTimeout(
+        function() {
+
+            processing = false;
+
+            participantElement.style.display =
+                "none";
+
+
+            startScanner();
+
+        },
+
+        2500
+
+    );
+
+}
+
+
+// =====================================================================
+// PARA SCANNER
+// =====================================================================
+
+async function stopScanner() {
+
+    if (
+        !scanner ||
+        !scannerRunning
     ) {
 
-        if (qrProcessed) {
-            return;
-        }
+        scanner = null;
 
+        scannerRunning = false;
 
-        qrProcessed = true;
-
-
-        const value =
-            String(decodedText || "").trim();
-
-
-        statusElement.textContent =
-            "QR Code identificado...";
-
-
-        await stopScanner();
-
-
-        qrValueElement.textContent =
-            value;
-
-
-        resultElement.style.display =
-            "block";
-
-
-        statusElement.textContent =
-            "QR Code lido com sucesso.";
-
-
-        startButton.textContent =
-            "LER OUTRO QR CODE";
-
-
-        startButton.disabled =
-            false;
+        return;
 
     }
 
 
+    try {
 
-    // ================================================================
-    // PARA O SCANNER
-    // ================================================================
-
-    async function stopScanner() {
-
-        if (
-            !scanner ||
-            !scannerRunning
-        ) {
-
-            scanner = null;
-
-            scannerRunning = false;
-
-            return;
-
-        }
-
-
-        try {
-
-            await scanner.stop();
-
-        }
-
-        catch (error) {
-
-            console.warn(
-                "TSUNAGU - parada da câmera:",
-                error
-            );
-
-        }
-
-        finally {
-
-            scannerRunning = false;
-
-            scanner = null;
-
-        }
+        await scanner.stop();
 
     }
+
+    catch(error) {
+
+        console.warn(error);
+
+    }
+
+    finally {
+
+        scannerRunning = false;
+
+        scanner = null;
+
+    }
+
+}
+
+
+// =====================================================================
+// STATUS VISUAL
+// =====================================================================
+
+function setStatus(
+    message,
+    type
+) {
+
+    statusElement.className =
+        type;
+
+
+    statusElement.textContent =
+        message;
+
+}
 
 </script>
 
