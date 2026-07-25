@@ -9,45 +9,103 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>TSUNAGU - Teste de Câmera</title>
+    <title>TSUNAGU - Scanner QR</title>
+
+    <!-- Biblioteca responsável pela leitura do QR Code -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <style>
 
-        body {
-            margin: 0;
-            padding: 25px;
-            background: #0F172A;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
+        * {
+            box-sizing: border-box;
         }
 
-        h1 {
-            letter-spacing: 3px;
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px 18px;
+            background: #0F172A;
+            color: #FFFFFF;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: 4px;
+        }
+
+        .header p {
+            margin-top: 8px;
+            color: #CBD5E1;
+        }
+
+        .scanner-card {
+            padding: 16px;
+            background: #1E293B;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .30);
+        }
+
+        #reader {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 14px;
+            background: #000000;
         }
 
         #status {
-            margin: 25px 0;
-            padding: 15px;
-            border-radius: 10px;
-            background: #1E293B;
+            margin-top: 20px;
+            padding: 17px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.4;
+            background: #2563EB;
         }
 
-        video {
-            width: 100%;
-            max-width: 500px;
-            border-radius: 16px;
-            background: black;
+        #result {
+            display: none;
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 12px;
+            background: #0F172A;
+            border: 1px solid #334155;
+        }
+
+        #result .label {
+            display: block;
+            margin-bottom: 8px;
+            color: #94A3B8;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        #qrValue {
+            display: block;
+            overflow-wrap: anywhere;
+            font-size: 18px;
+            font-weight: bold;
         }
 
         button {
             width: 100%;
-            max-width: 500px;
-            padding: 18px;
             margin-top: 20px;
+            padding: 17px;
             border: 0;
             border-radius: 12px;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -57,98 +115,253 @@
 
 <body>
 
-    <h1>TSUNAGU</h1>
+    <main class="container">
 
-    <p>Teste de acesso à câmera</p>
+        <header class="header">
 
-    <div id="status">
-        Clique no botão abaixo.
-    </div>
+            <h1>TSUNAGU</h1>
 
-    <video
-        id="camera"
-        autoplay
-        playsinline
-        muted>
-    </video>
+            <p>Leitor de QR Code</p>
 
-    <button id="btnCamera">
-        ABRIR CÂMERA
-    </button>
+        </header>
+
+
+        <section class="scanner-card">
+
+            <div id="reader"></div>
+
+            <div id="status">
+                Clique em "INICIAR LEITURA".
+            </div>
+
+
+            <div id="result">
+
+                <span class="label">
+                    Conteúdo identificado
+                </span>
+
+                <span id="qrValue"></span>
+
+            </div>
+
+
+            <button id="startButton">
+                INICIAR LEITURA
+            </button>
+
+        </section>
+
+    </main>
 
 
     <script>
 
+        /******************************************************************
+         * TSUNAGU
+         * Teste isolado do leitor de QR Code
+         ******************************************************************/
+
         const statusElement =
             document.getElementById("status");
 
-        const videoElement =
-            document.getElementById("camera");
+        const resultElement =
+            document.getElementById("result");
 
-        const button =
-            document.getElementById("btnCamera");
+        const qrValueElement =
+            document.getElementById("qrValue");
+
+        const startButton =
+            document.getElementById("startButton");
 
 
-        button.addEventListener(
+        let scanner = null;
+
+        let scannerRunning = false;
+
+        let qrProcessed = false;
+
+
+        startButton.addEventListener(
             "click",
-            abrirCamera
+            startScanner
         );
 
 
-        async function abrirCamera() {
+        // ==============================================================
+        // INICIA A CÂMERA E O LEITOR
+        // ==============================================================
+
+        async function startScanner() {
+
+            if (scannerRunning) {
+                return;
+            }
 
             try {
 
+                qrProcessed = false;
+
+                resultElement.style.display = "none";
+
                 statusElement.textContent =
-                    "Solicitando permissão da câmera...";
+                    "Abrindo câmera...";
+
+                startButton.disabled = true;
 
 
-                if (
-                    !navigator.mediaDevices ||
-                    !navigator.mediaDevices.getUserMedia
-                ) {
+                if (!scanner) {
 
-                    throw new Error(
-                        "Este navegador não disponibilizou getUserMedia."
-                    );
+                    scanner =
+                        new Html5Qrcode("reader");
 
                 }
 
 
-                const stream =
-                    await navigator.mediaDevices.getUserMedia({
+                await scanner.start(
 
-                        video: {
-                            facingMode: {
-                                ideal: "environment"
-                            }
-                        },
+                    {
+                        facingMode: {
+                            ideal: "environment"
+                        }
+                    },
 
-                        audio: false
+                    {
+                        fps: 10,
 
-                    });
+                        qrbox: function(
+                            viewfinderWidth,
+                            viewfinderHeight
+                        ) {
+
+                            const size =
+                                Math.floor(
+                                    Math.min(
+                                        viewfinderWidth,
+                                        viewfinderHeight
+                                    ) * 0.70
+                                );
+
+                            return {
+                                width: size,
+                                height: size
+                            };
+
+                        }
+                    },
+
+                    qrCodeSuccess,
+
+                    function() {
+                        // Falhas enquanto procura um QR são normais.
+                    }
+
+                );
 
 
-                videoElement.srcObject = stream;
-
+                scannerRunning = true;
 
                 statusElement.textContent =
-                    "Câmera funcionando corretamente.";
+                    "Aponte a câmera para o QR Code.";
 
+            }
 
-                button.style.display = "none";
-
-
-            } catch (error) {
+            catch (error) {
 
                 console.error(error);
 
+                scannerRunning = false;
+
+                startButton.disabled = false;
 
                 statusElement.textContent =
                     "ERRO: " +
                     (error.name || "Erro") +
                     " — " +
                     (error.message || String(error));
+
+            }
+
+        }
+
+
+        // ==============================================================
+        // QR CODE ENCONTRADO
+        // ==============================================================
+
+        async function qrCodeSuccess(
+            decodedText
+        ) {
+
+            if (qrProcessed) {
+                return;
+            }
+
+
+            qrProcessed = true;
+
+
+            const value =
+                String(decodedText || "").trim();
+
+
+            await stopScanner();
+
+
+            qrValueElement.textContent =
+                value;
+
+
+            resultElement.style.display =
+                "block";
+
+
+            statusElement.textContent =
+                "QR Code lido com sucesso.";
+
+
+            startButton.textContent =
+                "LER OUTRO QR CODE";
+
+
+            startButton.disabled =
+                false;
+
+        }
+
+
+        // ==============================================================
+        // PARA A CÂMERA
+        // ==============================================================
+
+        async function stopScanner() {
+
+            if (
+                !scanner ||
+                !scannerRunning
+            ) {
+                return;
+            }
+
+
+            try {
+
+                await scanner.stop();
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    "Erro ao parar câmera:",
+                    error
+                );
+
+            }
+
+            finally {
+
+                scannerRunning = false;
 
             }
 
