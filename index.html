@@ -54,6 +54,29 @@
             margin: 8px 0 0;
             color: #CBD5E1;
         }
+        .system-subtitle {
+            margin-bottom: 20px !important;
+        }
+        
+        .event-info {
+            margin-top: 20px;
+            padding: 18px;
+            background: #1E293B;
+            border: 1px solid #334155;
+            border-radius: 16px;
+        }
+        
+        .event-info h2 {
+            margin: 0;
+            font-size: 21px;
+            line-height: 1.3;
+        }
+        
+        .event-info p {
+            margin: 8px 0 0;
+            color: #94A3B8;
+            font-size: 14px;
+        }
 
         /* ============================================================
            CARDS
@@ -321,9 +344,21 @@
     <header class="header">
 
         <h1>TSUNAGU</h1>
-
-        <p>Sistema Inteligente de Gestão de Acesso</p>
-
+    
+        <p class="system-subtitle">
+            Sistema Inteligente de Gestão de Acesso
+        </p>
+    
+        <div class="event-info">
+    
+            <h2 id="eventName">
+                Carregando evento...
+            </h2>
+    
+            <p id="eventDateTime"></p>
+    
+        </div>
+    
     </header>
 
 
@@ -358,36 +393,68 @@
     <section class="stats">
 
         <div class="stat">
-
+    
+            <span
+                id="total"
+                class="stat-number"
+            >
+                -
+            </span>
+    
+            <span class="stat-label">
+                Participantes
+            </span>
+    
+        </div>
+    
+    
+        <div class="stat">
+    
             <span
                 id="checked"
                 class="stat-number"
             >
                 -
             </span>
-
+    
             <span class="stat-label">
                 Check-ins
             </span>
-
+    
         </div>
-
-
+    
+    
         <div class="stat">
-
+    
             <span
                 id="remaining"
                 class="stat-number"
             >
                 -
             </span>
-
+    
             <span class="stat-label">
                 Restantes
             </span>
-
+    
         </div>
-
+    
+    
+        <div class="stat">
+    
+            <span
+                id="presence"
+                class="stat-number"
+            >
+                -
+            </span>
+    
+            <span class="stat-label">
+                Presença
+            </span>
+    
+        </div>
+    
     </section>
 
 
@@ -465,11 +532,23 @@ const participantElement =
 const startButton =
     document.getElementById("startButton");
 
+const eventNameElement =
+    document.getElementById("eventName");
+
+const eventDateTimeElement =
+    document.getElementById("eventDateTime");
+
+const totalElement =
+    document.getElementById("total");
+
 const checkedElement =
     document.getElementById("checked");
 
 const remainingElement =
     document.getElementById("remaining");
+
+const presenceElement =
+    document.getElementById("presence");
 
 
 // =====================================================================
@@ -870,19 +949,66 @@ async function loadStatistics() {
             );
 
 
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " + response.status
+            );
+
+        }
+
+
         const result =
             await response.json();
 
 
-        if (result.success) {
+        if (!result.success) {
+            return;
+        }
 
-            checkedElement.textContent =
-                result.checked;
 
-            remainingElement.textContent =
-                result.remaining;
+        // -------------------------------------------------------------
+        // EVENTO
+        // -------------------------------------------------------------
+
+        if (result.event) {
+
+            eventNameElement.textContent =
+                result.event.name || "Evento";
+
+
+            const date =
+                result.event.date || "";
+
+            const time =
+                result.event.time || "";
+
+
+            eventDateTimeElement.textContent =
+                [date, time]
+                    .filter(Boolean)
+                    .join(" • ");
 
         }
+
+
+        // -------------------------------------------------------------
+        // ESTATÍSTICAS
+        // -------------------------------------------------------------
+
+        totalElement.textContent =
+            result.total ?? 0;
+
+        checkedElement.textContent =
+            result.checked ?? 0;
+
+        remainingElement.textContent =
+            result.remaining ?? 0;
+
+        presenceElement.textContent =
+            formatPercentage(
+                result.presence
+            );
 
     }
 
@@ -894,6 +1020,21 @@ async function loadStatistics() {
         );
 
     }
+
+}
+    function formatPercentage(value) {
+
+    const number =
+        Number(value || 0);
+
+
+    return number.toLocaleString(
+        "pt-BR",
+        {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }
+    ) + "%";
 
 }
 
