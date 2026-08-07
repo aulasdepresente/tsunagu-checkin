@@ -206,6 +206,15 @@
             font-size: 17px;
         }
 
+        #switchCameraButton {
+            width: 100%;
+            margin-top: 10px;
+            padding: 14px;
+            font-size: 15px;
+            background: #334155;
+            color: #FFFFFF;
+        }
+
         /* ============================================================
            BUSCA MANUAL
            ============================================================ */
@@ -383,6 +392,13 @@
         <button id="startButton">
             INICIAR CHECK-IN
         </button>
+        
+        <button
+            id="switchCameraButton"
+            style="display:none;"
+        >
+            TROCAR CÂMERA
+        </button>
 
     </section>
 
@@ -533,6 +549,9 @@ const participantElement =
 const startButton =
     document.getElementById("startButton");
 
+const switchCameraButton =
+    document.getElementById("switchCameraButton");
+
 const eventNameElement =
     document.getElementById("eventName");
 
@@ -581,6 +600,15 @@ let startingScanner = false;
 
 let processing = false;
 
+// Câmeras disponíveis no aparelho
+let availableCameras = [];
+
+// Índice da câmera atualmente selecionada
+let currentCameraIndex = -1;
+
+// ID da câmera selecionada manualmente
+let selectedCameraId = null;
+
 
 // =====================================================================
 // EVENTOS
@@ -589,6 +617,12 @@ let processing = false;
 startButton.addEventListener(
     "click",
     startScanner
+);
+
+
+switchCameraButton.addEventListener(
+    "click",
+    switchCamera
 );
 
 
@@ -635,32 +669,67 @@ async function startScanner() {
         return;
     }
 
-
     startingScanner = true;
 
     startButton.disabled = true;
+    switchCameraButton.disabled = true;
 
     participantElement.style.display =
         "none";
-
 
     setStatus(
         "Abrindo câmera...",
         "info"
     );
 
-
     try {
+
+        // -------------------------------------------------------------
+        // CARREGA AS CÂMERAS DISPONÍVEIS
+        // -------------------------------------------------------------
+
+        if (availableCameras.length === 0) {
+
+            availableCameras =
+                await Html5Qrcode.getCameras();
+
+            if (!availableCameras.length) {
+
+                throw new Error(
+                    "Nenhuma câmera encontrada."
+                );
+
+            }
+
+        }
+
+
+        // -------------------------------------------------------------
+        // CRIA O SCANNER
+        // -------------------------------------------------------------
 
         scanner =
             new Html5Qrcode("reader");
 
 
+        // -------------------------------------------------------------
+        // DEFINE QUAL CÂMERA SERÁ UTILIZADA
+        //
+        // Se o usuário ainda não escolheu manualmente,
+        // usamos a câmera traseira automaticamente.
+        // -------------------------------------------------------------
+
+        const cameraConfig =
+            selectedCameraId
+                ? selectedCameraId
+                : {
+                    facingMode: "environment"
+                };
+
+
         await scanner.start(
 
-            {
-                facingMode: "environment"
-            },
+            cameraConfig,
 
             {
                 fps: 10,
@@ -699,6 +768,28 @@ async function startScanner() {
             "info"
         );
 
+
+        // -------------------------------------------------------------
+        // EXIBE BOTÃO DE TROCA SOMENTE SE EXISTIR MAIS DE UMA CÂMERA
+        // -------------------------------------------------------------
+
+        if (availableCameras.length > 1) {
+
+            switchCameraButton.style.display =
+                "block";
+
+            switchCameraButton.disabled =
+                false;
+
+        }
+
+        else {
+
+            switchCameraButton.style.display =
+                "none";
+
+        }
+
     }
 
     catch(error) {
@@ -711,6 +802,8 @@ async function startScanner() {
 
         startButton.disabled = false;
 
+        switchCameraButton.disabled = false;
+
 
         setStatus(
             "Não foi possível iniciar a câmera.",
@@ -722,6 +815,125 @@ async function startScanner() {
     finally {
 
         startingScanner = false;
+
+    }
+
+}
+
+
+// =====================================================================
+// TROCA ENTRE AS CÂMERAS DISPONÍVEIS
+// =====================================================================
+
+async function switchCamera() {
+
+    if (
+        processing ||
+        startingScanner ||
+        availableCameras.length < 2
+    ) {
+        return;
+    }
+
+
+    switchCameraButton.disabled = true;
+
+
+    setStatus(
+        "Trocando câmera...",
+        "info"
+    );
+
+
+    try {
+
+        // Para a câmera atual
+        await stopScanner();
+
+
+        // -------------------------------------------------------------
+        // PRIMEIRA TROCA
+        //
+        // Localiza a câmera que parece ser traseira.
+        // -------------------------------------------------------------
+
+        if (currentCameraIndex === -1) {
+
+            const backCameraIndex =
+                availableCameras.findIndex(
+                    function(camera) {
+
+                        const label =
+                            String(
+                                camera.label || ""
+                            ).toLowerCase();
+
+
+                        return (
+                            label.includes("back") ||
+                            label.includes("rear") ||
+                            label.includes("traseira")
+                        );
+
+                    }
+                );
+
+
+            currentCameraIndex =
+                backCameraIndex >= 0
+                    ? backCameraIndex
+                    : 0;
+
+        }
+
+
+        // -------------------------------------------------------------
+        // AVANÇA PARA A PRÓXIMA CÂMERA
+        // -------------------------------------------------------------
+
+        currentCameraIndex =
+            (
+                currentCameraIndex + 1
+            ) %
+            availableCameras.length;
+
+
+        selectedCameraId =
+            availableCameras[
+                currentCameraIndex
+            ].id;
+
+
+        // Pequena pausa para o navegador liberar a câmera anterior
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    300
+                )
+        );
+
+
+        await startScanner();
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Erro ao trocar câmera:",
+            error
+        );
+
+
+        setStatus(
+            "Não foi possível trocar a câmera.",
+            "error"
+        );
+
+
+        switchCameraButton.disabled =
+            false;
 
     }
 
